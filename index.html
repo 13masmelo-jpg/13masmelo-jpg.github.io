@@ -1,0 +1,2182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sistema de Facturación - D'Puertas y Ventanas Paez Cruz SRL</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Libre+Barcode+39&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #7c3aed;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1e293b;
+            --light-color: #f8fafc;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+            
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            
+            --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            
+            --sidebar-width: 280px;
+            --sidebar-collapsed: 70px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            color: var(--gray-800);
+            line-height: 1.6;
+            min-height: 100vh;
+            font-size: 14px;
+        }
+        
+        /* Layout principal */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-collapsed);
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-lg);
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+            transition: width var(--transition-normal);
+            overflow: hidden;
+        }
+        
+        .sidebar:hover {
+            width: var(--sidebar-width);
+        }
+        
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            height: 70px;
+        }
+        
+        .sidebar-logo {
+            height: 40px;
+            width: 40px;
+            object-fit: contain;
+            border-radius: 8px;
+            background: white;
+            padding: 4px;
+            flex-shrink: 0;
+        }
+        
+        .company-name-sidebar {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+        
+        .sidebar:hover .company-name-sidebar {
+            opacity: 1;
+        }
+        
+        .user-info {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-height: 60px;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        
+        .user-details {
+            flex: 1;
+            min-width: 0;
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+        
+        .sidebar:hover .user-details {
+            opacity: 1;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .user-role {
+            font-size: 0.7rem;
+            opacity: 0.8;
+            margin-top: 0.125rem;
+        }
+        
+        /* Navegación principal */
+        .sidebar-nav {
+            flex: 1;
+            padding: 0.75rem 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            transition: all var(--transition-normal);
+            cursor: pointer;
+            gap: 0.75rem;
+            white-space: nowrap;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-left: 4px solid white;
+        }
+        
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .nav-text {
+            flex: 1;
+            font-weight: 500;
+            font-size: 0.85rem;
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+        
+        .sidebar:hover .nav-text {
+            opacity: 1;
+        }
+        
+        .logout-btn {
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+        
+        /* Contenido principal */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-collapsed);
+            padding: 0.75rem;
+            min-height: 100vh;
+            transition: margin-left var(--transition-normal);
+            width: calc(100% - var(--sidebar-collapsed));
+        }
+        
+        .sidebar:hover ~ .main-content {
+            margin-left: var(--sidebar-width);
+        }
+        
+        /* Header del contenido */
+        .content-header {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--gray-200);
+        }
+        
+        .page-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.25rem;
+        }
+        
+        .page-subtitle {
+            color: var(--gray-600);
+            font-size: 0.85rem;
+        }
+        
+        /* Tarjetas */
+        .card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-normal);
+            border: 1px solid var(--gray-200);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+            border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+            box-shadow: var(--shadow-md);
+            flex-shrink: 0;
+        }
+        
+        .card-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            flex: 1;
+        }
+        
+        /* Pestañas de categoría */
+        .category-tabs {
+            display: flex;
+            background: var(--gray-200);
+            border-radius: var(--radius-md);
+            padding: 0.25rem;
+            margin-bottom: 0.75rem;
+            gap: 0.25rem;
+            overflow-x: auto;
+        }
+        
+        .category-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .category-tab {
+            flex: 0 0 auto;
+            padding: 0.5rem;
+            text-align: center;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            min-width: 100px;
+            white-space: nowrap;
+            font-size: 0.8rem;
+        }
+        
+        .category-tab.active {
+            background: white;
+            color: var(--primary-color);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        /* Formularios */
+        .form-group {
+            margin-bottom: 0.75rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+            color: var(--gray-700);
+            font-size: 0.85rem;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.625rem;
+            border: 2px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            transition: all var(--transition-normal);
+            background: white;
+        }
+        
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        /* Grids */
+        .customer-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        @media (min-width: 640px) {
+            .customer-grid {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+        }
+        
+        /* Productos */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.5rem;
+        }
+        
+        .product-card {
+            border: 2px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            padding: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            background: white;
+        }
+        
+        .product-card.selected {
+            border-color: var(--primary-color);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(124, 58, 237, 0.05));
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .product-name {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+        
+        .product-price {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .product-description {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            line-height: 1.3;
+        }
+        
+        /* Botones */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            padding: 0.625rem 1rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            min-height: 44px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #0da271);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
+            color: white;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color), #d97706);
+            color: white;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--gray-600), var(--gray-700));
+            color: white;
+            box-shadow: 0 4px 12px rgba(71, 85, 105, 0.25);
+        }
+        
+        .btn-thermal {
+            background: linear-gradient(135deg, #059669, #047857);
+            color: white;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+        }
+        
+        .btn-whatsapp {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+        }
+        
+        .btn-full {
+            width: 100%;
+        }
+        
+        /* Grupos de botones */
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.5rem;
+            margin: 0.75rem 0;
+        }
+        
+        /* Área calculada */
+        .area-display {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.1));
+            border-radius: var(--radius-md);
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            text-align: center;
+            border: 2px dashed var(--primary-color);
+        }
+        
+        .area-value {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0.25rem 0;
+        }
+        
+        /* Factura */
+        .invoice-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 0.75rem 0;
+            background: white;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            font-size: 0.8rem;
+        }
+        
+        .invoice-table thead {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+        
+        .invoice-table th {
+            padding: 0.625rem;
+            text-align: left;
+            color: white;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+        
+        .invoice-table td {
+            padding: 0.625rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        /* Descuentos */
+        .discount-card {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.1));
+            border-radius: var(--radius-md);
+            padding: 0.75rem;
+            margin-top: 0.75rem;
+            border: 2px solid var(--warning-color);
+        }
+        
+        /* Historial */
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--primary-color);
+            transition: all var(--transition-normal);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .history-item:hover {
+            transform: translateX(3px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* Checkbox personalizado */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+        }
+        
+        .checkbox-container input {
+            display: none;
+        }
+        
+        .checkbox-custom {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--gray-400);
+            border-radius: var(--radius-sm);
+            margin-right: 0.375rem;
+            position: relative;
+            transition: all var(--transition-normal);
+            flex-shrink: 0;
+        }
+        
+        .checkbox-container input:checked + .checkbox-custom {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .checkbox-container input:checked + .checkbox-custom::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        .checkbox-label {
+            font-size: 0.85rem;
+            color: var(--gray-700);
+        }
+        
+        /* Responsive */
+        @media (max-width: 640px) {
+            .main-content {
+                padding: 0.5rem;
+            }
+            
+            .content-header {
+                padding: 0.75rem;
+            }
+            
+            .card {
+                padding: 0.75rem;
+            }
+            
+            .btn-group {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: flex-start;
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 0.75rem;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 1rem;
+            box-shadow: var(--shadow-lg);
+            margin-top: 1rem;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+        
+        .modal-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        
+        /* Notificación */
+        .notification {
+            position: fixed;
+            top: 0.75rem;
+            right: 0.75rem;
+            left: 0.75rem;
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            background: white;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1000;
+            border-left: 4px solid var(--success-color);
+            max-width: 400px;
+            margin: 0 auto;
+            display: none;
+        }
+        
+        .notification-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--success-color), #0da271);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="appContainer" class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <img id="sidebarLogo" src="https://i.imgur.com/66u2QiC.png" alt="Logo" class="sidebar-logo">
+                <div class="company-name-sidebar">D'Puertas y Ventanas Paez Cruz SRL</div>
+            </div>
+            
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="currentUserName">Administrador</div>
+                    <div class="user-role" id="currentUserRole">Administrador</div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-item active" id="invoiceMenu">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span class="nav-text">Facturación</span>
+                </div>
+                <div class="nav-item" id="clientsMenu">
+                    <i class="fas fa-users"></i>
+                    <span class="nav-text">Clientes</span>
+                </div>
+                <div class="nav-item" id="reportsMenu">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="nav-text">Reportes</span>
+                </div>
+                <div class="nav-item" id="inventoryMenu">
+                    <i class="fas fa-boxes"></i>
+                    <span class="nav-text">Inventario</span>
+                </div>
+            </nav>
+            
+            <div class="nav-item logout-btn" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="nav-text">Cerrar Sesión</span>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header dinámico -->
+            <div class="content-header">
+                <h1 class="page-title" id="pageTitle">Facturación</h1>
+                <p class="page-subtitle" id="pageSubtitle">Sistema de facturación profesional</p>
+            </div>
+            
+            <!-- Sección de Facturación -->
+            <div id="invoiceSection" class="content-section active">
+                <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                    <!-- Columna izquierda: Formularios -->
+                    <div>
+                        <!-- Tarjeta de agregar items -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="fas fa-plus-circle"></i>
+                                </div>
+                                <h2 class="card-title">Agregar Item</h2>
+                            </div>
+                            
+                            <!-- Pestañas de categoría -->
+                            <div class="category-tabs" id="categoryTabsContainer">
+                                <!-- Las pestañas se cargarán dinámicamente -->
+                            </div>
+                            
+                            <!-- Sección de productos por categoría -->
+                            <div id="dynamicCategoryContent">
+                                <!-- El contenido se cargará dinámicamente -->
+                            </div>
+                            
+                            <div class="btn-group">
+                                <button class="btn btn-success btn-full" id="addItemBtn">
+                                    <i class="fas fa-cart-plus"></i>
+                                    Agregar Item
+                                </button>
+                                <button class="btn btn-secondary btn-full" id="resetFormBtn">
+                                    <i class="fas fa-broom"></i>
+                                    Limpiar
+                                </button>
+                            </div>
+
+                            <!-- Checkbox para instalación -->
+                            <div class="form-group" style="margin-top: 0.75rem;">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="includeInstallation">
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-label">Incluir instalación</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Tarjeta de configuración -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="fas fa-cogs"></i>
+                                </div>
+                                <h2 class="card-title">Configuración de Factura</h2>
+                            </div>
+                            
+                            <!-- Datos del cliente -->
+                            <div class="customer-grid">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-user"></i> Nombre del Cliente
+                                    </label>
+                                    <input type="text" class="form-input" id="customerName" 
+                                           placeholder="Nombre completo">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-phone"></i> Teléfono
+                                    </label>
+                                    <input type="tel" class="form-input" id="customerPhone" 
+                                           placeholder="8091234567" maxlength="10">
+                                </div>
+                            </div>
+                            
+                            <!-- Descuentos -->
+                            <div class="discount-card">
+                                <h3 class="form-label">
+                                    <i class="fas fa-tag"></i> Descuento
+                                </h3>
+                                <div class="form-group">
+                                    <label class="form-label">Monto ($)</label>
+                                    <input type="number" class="form-input" id="discountAmount" 
+                                           min="0" step="0.01" placeholder="500.00">
+                                </div>
+                                <button class="btn btn-warning" id="applyDiscountBtn">
+                                    <i class="fas fa-check-circle"></i> Aplicar
+                                </button>
+                            </div>
+                            
+                            <!-- Botones de acción -->
+                            <div class="btn-group">
+                                <button class="btn btn-success" id="downloadPDFMainBtn">
+                                    <i class="fas fa-download"></i> Descargar PDF
+                                </button>
+                                <button class="btn btn-thermal" id="printThermalBtn">
+                                    <i class="fas fa-receipt"></i> Ticket
+                                </button>
+                                <button class="btn btn-whatsapp" id="sendWhatsAppBtn">
+                                    <i class="fab fa-whatsapp"></i> Enviar
+                                </button>
+                                <button class="btn btn-danger" id="clearInvoiceBtn">
+                                    <i class="fas fa-file-alt"></i> Nueva
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna derecha: Factura e historial -->
+                    <div>
+                        <!-- Factura actual -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                </div>
+                                <h2 class="card-title">Factura Actual</h2>
+                                <span class="info-badge" id="invoiceNumber" style="background: var(--primary-color); color: white; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600;">
+                                    FAC-001
+                                </span>
+                            </div>
+                            
+                            <div id="invoiceContainer">
+                                <div style="text-align: center; padding: 1.5rem 0.75rem; color: var(--gray-500);">
+                                    <i class="fas fa-receipt" style="font-size: 2rem; margin-bottom: 0.75rem; opacity: 0.5;"></i>
+                                    <h3 style="margin-bottom: 0.25rem; color: var(--gray-600); font-size: 1rem;">Factura Vacía</h3>
+                                    <p style="font-size: 0.85rem;">Agrega items usando el formulario</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Botones rápidos -->
+                            <div class="btn-group" style="margin-top: 1rem;">
+                                <button class="btn btn-success" id="downloadPDFBtn">
+                                    <i class="fas fa-download"></i> PDF
+                                </button>
+                                <button class="btn btn-thermal" id="quickPrintThermalBtn">
+                                    <i class="fas fa-receipt"></i> Ticket
+                                </button>
+                                <button class="btn btn-whatsapp" id="sendWhatsAppFromInvoiceBtn">
+                                    <i class="fab fa-whatsapp"></i> WhatsApp
+                                </button>
+                                <button class="btn btn-secondary" id="clearBtn">
+                                    <i class="fas fa-trash"></i> Limpiar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Historial -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="fas fa-history"></i>
+                                </div>
+                                <h2 class="card-title">Historial</h2>
+                            </div>
+                            
+                            <div class="history-list" id="history">
+                                <div style="text-align: center; padding: 1rem; color: var(--gray-500);">
+                                    <i class="fas fa-clock" style="font-size: 1.5rem; margin-bottom: 0.75rem; opacity: 0.5;"></i>
+                                    <p style="font-size: 0.85rem;">No hay facturas aún</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección de Clientes -->
+            <div id="clientsSection" class="content-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h2 class="card-title">Gestión de Clientes</h2>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-success" id="addClientBtn">
+                            <i class="fas fa-plus"></i> Nuevo Cliente
+                        </button>
+                    </div>
+                    
+                    <!-- Lista de clientes -->
+                    <div id="clientsList">
+                        <div style="text-align: center; padding: 1.5rem; color: var(--gray-500);">
+                            <i class="fas fa-users" style="font-size: 1.5rem; margin-bottom: 0.75rem; opacity: 0.5;"></i>
+                            <p style="font-size: 0.85rem;">No hay clientes registrados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección de Reportes -->
+            <div id="reportsSection" class="content-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h2 class="card-title">Reportes</h2>
+                    </div>
+                    
+                    <div id="reportsContent">
+                        <div style="text-align: center; padding: 1.5rem; color: var(--gray-500);">
+                            <i class="fas fa-chart-line" style="font-size: 1.5rem; margin-bottom: 0.75rem; opacity: 0.5;"></i>
+                            <p style="font-size: 0.85rem;">Sección de reportes en desarrollo</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección de Inventario -->
+            <div id="inventorySection" class="content-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <h2 class="card-title">Inventario</h2>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="addCategoryBtn">
+                            <i class="fas fa-plus"></i> Nueva Categoría
+                        </button>
+                        <button class="btn btn-success" id="addProductBtn">
+                            <i class="fas fa-plus"></i> Nuevo Producto
+                        </button>
+                    </div>
+                    
+                    <!-- Productos -->
+                    <div id="inventoryItems">
+                        <div style="text-align: center; padding: 1.5rem; color: var(--gray-500);">
+                            <i class="fas fa-box" style="font-size: 1.5rem; margin-bottom: 0.75rem; opacity: 0.5;"></i>
+                            <p style="font-size: 0.85rem;">Cargando inventario...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para clientes -->
+    <div id="clientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-user-plus"></i> <span id="modalClientTitle">Nuevo Cliente</span>
+                </h2>
+                <button class="btn btn-secondary btn-sm" id="closeClientModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Nombre Completo</label>
+                <input type="text" class="form-input" id="clientName" placeholder="Nombre del cliente">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Teléfono</label>
+                <input type="tel" class="form-input" id="clientPhone" 
+                       placeholder="8091234567" maxlength="10">
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-success" id="saveClientBtn">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+                <button class="btn btn-secondary" id="cancelClientBtn">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+            
+            <input type="hidden" id="editingClientId" value="">
+        </div>
+    </div>
+    
+    <!-- Notificación -->
+    <div id="notification" class="notification">
+        <div class="notification-icon">
+            <i class="fas fa-check"></i>
+        </div>
+        <div>
+            <h4 style="margin-bottom: 0.125rem; color: var(--gray-900); font-size: 0.9rem;">¡Éxito!</h4>
+            <p id="notificationMessage" style="color: var(--gray-600); font-size: 0.8rem;"></p>
+        </div>
+    </div>
+
+    <script>
+        // =================== DATOS INICIALES ===================
+        
+        // Datos de la empresa
+        let companyInfo = {
+            name: "D'Puertas y Ventanas Paez Cruz SRL",
+            address: "Santo Domingo KM 13 Isabel Santana #19",
+            phone: "809-717-4176",
+            email: "puertayventanaspaezcruz@gmail.com",
+            message: "¡Gracias por su preferencia!",
+            logo: "https://i.imgur.com/66u2QiC.png"
+        };
+        
+        // Configuración
+        let systemConfig = {
+            profitPercentage: 30
+        };
+        
+        // Categorías
+        let categories = [
+            { id: 1, name: "Ventanas", description: "Materiales para ventanas" },
+            { id: 2, name: "Gabinetes", description: "Gabinetes de cocina y baño" },
+            { id: 3, name: "Closet", description: "Closets y armarios" },
+            { id: 4, name: "Baño", description: "Productos para baño" },
+            { id: 5, name: "Gabinetes Piso", description: "Gabinetes para piso" }
+        ];
+        
+        // Productos
+        let products = [
+            { id: 1, categoryId: 1, name: "P92", description: "Material premium de alta calidad", 
+              price: 430, calculationType: "square_foot", installationPrice: 50 },
+            { id: 2, categoryId: 1, name: "P65", description: "Material estándar de buena calidad", 
+              price: 260, calculationType: "square_foot", installationPrice: 40 },
+            { id: 3, categoryId: 2, name: "Blanco", description: "Gabinete color blanco", 
+              price: 1150, calculationType: "square_foot", installationPrice: 100 },
+            { id: 4, categoryId: 2, name: "Caoba", description: "Gabinete color caoba", 
+              price: 1300, calculationType: "square_foot", installationPrice: 120 }
+        ];
+        
+        // Variables globales
+        let currentCategory = null;
+        let currentInvoiceItems = [];
+        let invoiceCounter = 1;
+        let invoiceHistory = [];
+        let currentDiscount = { amount: 0, reason: "", applied: false };
+        let clients = [];
+        
+        // =================== FUNCIONES BÁSICAS ===================
+        
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const messageEl = document.getElementById('notificationMessage');
+            const icon = notification.querySelector('.notification-icon i');
+            
+            if (type === 'error') {
+                notification.style.borderLeftColor = 'var(--danger-color)';
+                notification.querySelector('.notification-icon').style.background = 'linear-gradient(135deg, var(--danger-color), #dc2626)';
+                icon.className = 'fas fa-exclamation-circle';
+            } else {
+                notification.style.borderLeftColor = 'var(--success-color)';
+                notification.querySelector('.notification-icon').style.background = 'linear-gradient(135deg, var(--success-color), #0da271)';
+                icon.className = 'fas fa-check';
+            }
+            
+            messageEl.textContent = message;
+            notification.style.display = 'flex';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        function saveToLocalStorage() {
+            localStorage.setItem('clients', JSON.stringify(clients));
+            localStorage.setItem('categories', JSON.stringify(categories));
+            localStorage.setItem('products', JSON.stringify(products));
+            localStorage.setItem('invoiceCounter', invoiceCounter.toString());
+            localStorage.setItem('invoiceHistory', JSON.stringify(invoiceHistory));
+        }
+        
+        function loadFromLocalStorage() {
+            const savedClients = JSON.parse(localStorage.getItem('clients'));
+            const savedCategories = JSON.parse(localStorage.getItem('categories'));
+            const savedProducts = JSON.parse(localStorage.getItem('products'));
+            const savedInvoiceCounter = localStorage.getItem('invoiceCounter');
+            const savedInvoiceHistory = JSON.parse(localStorage.getItem('invoiceHistory'));
+            
+            if (savedClients) clients = savedClients;
+            if (savedCategories) categories = savedCategories;
+            if (savedProducts) products = savedProducts;
+            if (savedInvoiceCounter) invoiceCounter = parseInt(savedInvoiceCounter);
+            if (savedInvoiceHistory) invoiceHistory = savedInvoiceHistory;
+        }
+        
+        function generateInvoiceNumber() {
+            return `FAC-${invoiceCounter.toString().padStart(3, '0')}`;
+        }
+        
+        // =================== FUNCIONES DE INTERFAZ ===================
+        
+        function initializeUI() {
+            loadFromLocalStorage();
+            
+            // Cargar categorías y productos
+            loadCategoryTabs();
+            loadInventory();
+            
+            // Actualizar número de factura
+            document.getElementById('invoiceNumber').textContent = generateInvoiceNumber();
+            
+            // Cargar historial
+            loadInvoiceHistory();
+            loadClientsList();
+        }
+        
+        function loadCategoryTabs() {
+            const categoryTabsContainer = document.getElementById('categoryTabsContainer');
+            
+            if (categories.length === 0) {
+                categoryTabsContainer.innerHTML = `
+                    <div style="text-align: center; padding: 0.75rem; color: var(--gray-500); font-size: 0.85rem;">
+                        No hay categorías. Agrega una en Inventario.
+                    </div>
+                `;
+                return;
+            }
+            
+            let categoryTabsHTML = '';
+            categories.forEach((category, index) => {
+                const icon = getCategoryIcon(category.name);
+                categoryTabsHTML += `
+                    <button class="category-tab ${index === 0 ? 'active' : ''}" 
+                            data-category-id="${category.id}"
+                            data-category-name="${category.name}">
+                        <i class="${icon}"></i>
+                        ${category.name}
+                    </button>
+                `;
+            });
+            
+            categoryTabsContainer.innerHTML = categoryTabsHTML;
+            
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const categoryId = this.dataset.categoryId;
+                    const categoryName = this.dataset.categoryName;
+                    
+                    document.querySelectorAll('.category-tab').forEach(t => {
+                        t.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    loadCategoryContent(categoryId, categoryName);
+                });
+            });
+            
+            if (categories.length > 0) {
+                loadCategoryContent(categories[0].id, categories[0].name);
+            }
+        }
+        
+        function getCategoryIcon(categoryName) {
+            switch(categoryName.toLowerCase()) {
+                case 'ventanas': return 'fas fa-window-maximize';
+                case 'gabinetes': return 'fas fa-archive';
+                case 'closet': return 'fas fa-door-closed';
+                case 'baño': return 'fas fa-bath';
+                case 'gabinetes piso': return 'fas fa-layer-group';
+                default: return 'fas fa-box';
+            }
+        }
+        
+        function loadCategoryContent(categoryId, categoryName) {
+            const dynamicContent = document.getElementById('dynamicCategoryContent');
+            currentCategory = categoryId;
+            
+            const categoryProducts = products.filter(p => p.categoryId === parseInt(categoryId));
+            
+            let contentHTML = `
+                <div id="categoryContent-${categoryId}" class="category-content active-content">
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <input type="text" class="form-input" id="categoryDescription-${categoryId}" 
+                               placeholder="Ej: ${categoryName} principal...">
+                    </div>
+            `;
+            
+            if (categoryProducts.length === 0) {
+                contentHTML += `
+                    <div style="text-align: center; padding: 0.75rem; color: var(--gray-500); font-size: 0.85rem;">
+                        No hay productos en esta categoría. Agrega productos en Inventario.
+                    </div>
+                `;
+            } else {
+                contentHTML += `
+                    <div class="form-group">
+                        <label class="form-label">Producto</label>
+                        <div class="product-grid" id="productOptions-${categoryId}">
+                            <!-- Productos se cargan dinámicamente -->
+                        </div>
+                    </div>
+                    
+                    <!-- Campos dinámicos -->
+                    <div id="dynamicFields-${categoryId}">
+                        <!-- Se llenará dinámicamente según el producto seleccionado -->
+                    </div>
+                `;
+            }
+            
+            contentHTML += `</div>`;
+            dynamicContent.innerHTML = contentHTML;
+            
+            if (categoryProducts.length > 0) {
+                loadCategoryProducts(categoryId);
+            }
+        }
+        
+        function loadCategoryProducts(categoryId) {
+            const productContainer = document.getElementById(`productOptions-${categoryId}`);
+            if (!productContainer) return;
+            
+            const categoryProducts = products.filter(p => p.categoryId === parseInt(categoryId));
+            
+            if (categoryProducts.length === 0) {
+                productContainer.innerHTML = `
+                    <div style="text-align: center; padding: 0.75rem; color: var(--gray-500); grid-column: 1 / -1; font-size: 0.85rem;">
+                        No hay productos en esta categoría. Agrega productos en Inventario.
+                    </div>
+                `;
+                return;
+            }
+            
+            let productsHTML = '';
+            categoryProducts.forEach(product => {
+                const priceText = product.calculationType === 'unit' 
+                    ? `$${product.price.toFixed(2)}` 
+                    : `$${product.price.toFixed(2)}/ft²`;
+                
+                productsHTML += `
+                    <div class="product-card" data-product-id="${product.id}" data-category-id="${categoryId}" data-calculation-type="${product.calculationType}">
+                        <div class="product-name">${product.name}</div>
+                        <div class="product-description">${product.description}</div>
+                        <div class="product-price">${priceText}</div>
+                    </div>
+                `;
+            });
+            
+            productContainer.innerHTML = productsHTML;
+            
+            productContainer.querySelectorAll('.product-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const productId = parseInt(this.dataset.productId);
+                    const categoryId = this.dataset.categoryId;
+                    const calculationType = this.dataset.calculationType;
+                    const product = products.find(p => p.id === productId);
+                    
+                    if (!product) return;
+                    
+                    productContainer.querySelectorAll('.product-card').forEach(c => {
+                        c.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                    
+                    updateDynamicFields(categoryId, calculationType);
+                });
+            });
+        }
+        
+        function updateDynamicFields(categoryId, calculationType) {
+            const dynamicFields = document.getElementById(`dynamicFields-${categoryId}`);
+            if (!dynamicFields) return;
+            
+            if (calculationType === 'unit') {
+                dynamicFields.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Cantidad</label>
+                        <input type="number" class="form-input" id="quantity-${categoryId}" 
+                               min="1" step="1" value="1">
+                    </div>
+                `;
+            } else {
+                dynamicFields.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label">Medidas (pulgadas)</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                            <div>
+                                <label class="form-label">Ancho</label>
+                                <input type="number" class="form-input" id="width-${categoryId}" 
+                                       min="0.1" step="0.01" placeholder="48">
+                            </div>
+                            <div>
+                                <label class="form-label">Alto</label>
+                                <input type="number" class="form-input" id="height-${categoryId}" 
+                                       min="0.1" step="0.01" placeholder="96">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // =================== FUNCIONES DE FACTURACIÓN ===================
+        
+        function addItemToInvoice() {
+            if (!currentCategory) {
+                showNotification('Selecciona una categoría', 'error');
+                return;
+            }
+            
+            const categoryId = parseInt(currentCategory);
+            const category = categories.find(c => c.id === categoryId);
+            
+            if (!category) {
+                showNotification('Categoría no válida', 'error');
+                return;
+            }
+            
+            const productContainer = document.getElementById(`productOptions-${categoryId}`);
+            const selectedCard = productContainer ? productContainer.querySelector('.product-card.selected') : null;
+            const customerName = document.getElementById('customerName').value.trim();
+            
+            if (!selectedCard) {
+                showNotification('Selecciona un producto', 'error');
+                return;
+            }
+            
+            if (!customerName) {
+                showNotification('Ingresa el nombre del cliente', 'error');
+                return;
+            }
+            
+            const productId = parseInt(selectedCard.dataset.productId);
+            const calculationType = selectedCard.dataset.calculationType;
+            const product = products.find(p => p.id === productId);
+            const descriptionInput = document.getElementById(`categoryDescription-${categoryId}`);
+            const description = descriptionInput ? descriptionInput.value.trim() : `${category.name} ${product.name}`;
+            
+            const includeInstallation = document.getElementById('includeInstallation').checked;
+            const installationPrice = includeInstallation ? (product.installationPrice || 0) : 0;
+            
+            let total = 0;
+            let quantity = 1;
+            let area = 0;
+            let width = 0;
+            let height = 0;
+            
+            if (calculationType === 'unit') {
+                const quantityInput = document.getElementById(`quantity-${categoryId}`);
+                quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+                total = (product.price * quantity) + (installationPrice * quantity);
+            } else {
+                const widthInput = document.getElementById(`width-${categoryId}`);
+                const heightInput = document.getElementById(`height-${categoryId}`);
+                
+                width = widthInput ? parseFloat(widthInput.value) : 0;
+                height = heightInput ? parseFloat(heightInput.value) : 0;
+                
+                if (!width || width <= 0 || !height || height <= 0) {
+                    showNotification('Ingresa medidas válidas', 'error');
+                    return;
+                }
+                
+                area = (width * height) / 144;
+                total = (area * product.price) + (area * installationPrice);
+            }
+            
+            const item = {
+                id: Date.now(),
+                categoryId: categoryId,
+                categoryName: category.name,
+                description: description,
+                width: width,
+                height: height,
+                area: area,
+                quantity: quantity,
+                productId: productId,
+                productName: product.name,
+                calculationType: calculationType,
+                price: product.price,
+                installationPrice: installationPrice,
+                total: total,
+                includesInstallation: includeInstallation
+            };
+            
+            currentInvoiceItems.push(item);
+            updateInvoiceDisplay();
+            resetItemForm();
+            showNotification(`${product.name} agregado correctamente`);
+        }
+        
+        function resetItemForm() {
+            const categoryId = parseInt(currentCategory);
+            const descriptionInput = document.getElementById(`categoryDescription-${categoryId}`);
+            
+            if (descriptionInput) descriptionInput.value = '';
+            
+            const dynamicFields = document.getElementById(`dynamicFields-${categoryId}`);
+            if (dynamicFields) {
+                dynamicFields.innerHTML = '';
+            }
+            
+            const productContainer = document.getElementById(`productOptions-${categoryId}`);
+            if (productContainer) {
+                productContainer.querySelectorAll('.product-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+            }
+        }
+        
+        function updateInvoiceDisplay() {
+            const invoiceContainer = document.getElementById('invoiceContainer');
+            
+            if (currentInvoiceItems.length === 0) {
+                invoiceContainer.innerHTML = `
+                    <div style="text-align: center; padding: 1.5rem 0.75rem; color: var(--gray-500);">
+                        <i class="fas fa-receipt" style="font-size: 2rem; margin-bottom: 0.75rem; opacity: 0.5;"></i>
+                        <h3 style="margin-bottom: 0.25rem; color: var(--gray-600); font-size: 1rem;">Factura Vacía</h3>
+                        <p style="font-size: 0.85rem;">Agrega items usando el formulario</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let subtotal = 0;
+            let itemsHTML = '';
+            
+            currentInvoiceItems.forEach((item, index) => {
+                subtotal += item.total;
+                
+                if (item.calculationType === 'unit') {
+                    itemsHTML += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${item.description}</td>
+                            <td>-</td>
+                            <td>${item.quantity} unidad(es)</td>
+                            <td>${item.productName}</td>
+                            <td style="font-weight: 600;">$${item.total.toFixed(2)}</td>
+                        </tr>
+                    `;
+                } else {
+                    itemsHTML += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${item.description}</td>
+                            <td>${item.width}" × ${item.height}"</td>
+                            <td>${item.area.toFixed(2)} ft²</td>
+                            <td>${item.productName}</td>
+                            <td style="font-weight: 600;">$${item.total.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            const discountAmount = currentDiscount.applied ? currentDiscount.amount : 0;
+            const finalTotal = subtotal - discountAmount;
+            
+            const customerName = document.getElementById('customerName').value;
+            const customerPhone = document.getElementById('customerPhone').value;
+            const invoiceNumber = document.getElementById('invoiceNumber').textContent;
+            
+            const invoiceHTML = `
+                <div style="margin-bottom: 0.75rem;">
+                    <h3 style="color: var(--gray-700); margin-bottom: 0.25rem; font-size: 0.9rem;">Cliente: ${customerName}</h3>
+                    <div style="font-size: 0.85rem;">
+                        ${customerPhone ? `<div><strong>Teléfono:</strong> ${customerPhone}</div>` : ''}
+                        <div><strong>Factura:</strong> ${invoiceNumber}</div>
+                        <div><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-ES')}</div>
+                    </div>
+                </div>
+                
+                <table class="invoice-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Descripción</th>
+                            <th>Medidas</th>
+                            <th>Área</th>
+                            <th>Producto</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHTML}
+                    </tbody>
+                </table>
+                
+                <div style="background: white; border-radius: var(--radius-md); padding: 0.75rem; margin-top: 0.75rem; box-shadow: var(--shadow-sm);">
+                    <div style="display: grid; gap: 0.375rem;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="font-size: 0.85rem;">Subtotal:</span>
+                            <span style="font-weight: 600; font-size: 0.85rem;">$${subtotal.toFixed(2)}</span>
+                        </div>
+                        
+                        ${currentDiscount.applied ? `
+                            <div style="display: flex; justify-content: space-between; color: var(--success-color);">
+                                <span style="font-size: 0.85rem;">Descuento:</span>
+                                <span style="font-weight: 600; font-size: 0.85rem;">-$${discountAmount.toFixed(2)}</span>
+                            </div>
+                        ` : ''}
+                        
+                        <div style="display: flex; justify-content: space-between; margin-top: 0.375rem; padding-top: 0.375rem; border-top: 2px solid var(--primary-color);">
+                            <span style="font-weight: 700; font-size: 0.9rem;">TOTAL FINAL:</span>
+                            <span style="font-size: 1.1rem; font-weight: 700; color: var(--primary-color);">
+                                $${finalTotal.toFixed(2)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            invoiceContainer.innerHTML = invoiceHTML;
+        }
+        
+        function clearInvoice() {
+            if (currentInvoiceItems.length === 0) {
+                showNotification('No hay items en la factura', 'info');
+                return;
+            }
+            
+            if (confirm('¿Limpiar toda la factura?')) {
+                currentInvoiceItems = [];
+                currentDiscount = { amount: 0, reason: "", applied: false };
+                updateInvoiceDisplay();
+                showNotification('Factura limpiada');
+            }
+        }
+        
+        function saveInvoiceToHistory() {
+            const customerName = document.getElementById('customerName').value.trim();
+            const customerPhone = document.getElementById('customerPhone').value.trim();
+            
+            if (!customerName) {
+                showNotification('Ingresa el nombre del cliente para guardar la factura', 'error');
+                return;
+            }
+            
+            // Guardar cliente si no existe
+            const existingClient = clients.find(c => c.phone === customerPhone);
+            if (!existingClient) {
+                const newClient = {
+                    id: Date.now(),
+                    name: customerName,
+                    phone: customerPhone,
+                    createdAt: new Date().toISOString()
+                };
+                clients.unshift(newClient);
+                saveToLocalStorage();
+            }
+            
+            // Calcular totales
+            let subtotal = 0;
+            
+            currentInvoiceItems.forEach(item => {
+                subtotal += item.total;
+            });
+            
+            const discountAmount = currentDiscount.applied ? currentDiscount.amount : 0;
+            const finalTotal = subtotal - discountAmount;
+            
+            // Guardar factura en historial
+            const invoice = {
+                id: Date.now(),
+                invoiceNumber: generateInvoiceNumber(),
+                date: new Date().toISOString(),
+                customerName: customerName,
+                customerPhone: customerPhone,
+                items: [...currentInvoiceItems],
+                subtotal: subtotal,
+                discount: currentDiscount,
+                total: finalTotal
+            };
+            
+            invoiceHistory.unshift(invoice);
+            invoiceCounter++;
+            document.getElementById('invoiceNumber').textContent = generateInvoiceNumber();
+            
+            saveToLocalStorage();
+            loadInvoiceHistory();
+            showNotification('Factura guardada en historial');
+            
+            // Limpiar factura actual
+            currentInvoiceItems = [];
+            currentDiscount = { amount: 0, reason: "", applied: false };
+            updateInvoiceDisplay();
+            
+            // Limpiar formulario de cliente
+            document.getElementById('customerName').value = '';
+            document.getElementById('customerPhone').value = '';
+            document.getElementById('discountAmount').value = '';
+        }
+        
+        function loadInvoiceHistory() {
+            const historyContainer = document.getElementById('history');
+            
+            if (invoiceHistory.length === 0) {
+                historyContainer.innerHTML = `
+                    <div style="text-align: center; padding: 1rem; color: var(--gray-500);">
+                        <i class="fas fa-clock" style="font-size: 1.5rem; margin-bottom: 0.75rem; opacity: 0.5;"></i>
+                        <p style="font-size: 0.85rem;">No hay facturas aún</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let historyHTML = '';
+            invoiceHistory.forEach(invoice => {
+                const date = new Date(invoice.date).toLocaleDateString('es-ES');
+                historyHTML += `
+                    <div class="history-item" data-invoice-id="${invoice.id}">
+                        <div>
+                            <div style="font-weight: 600; color: var(--gray-900); font-size: 0.85rem;">${invoice.invoiceNumber}</div>
+                            <div style="font-size: 0.8rem; color: var(--gray-600); margin-top: 0.125rem;">
+                                ${invoice.customerName} | ${date}
+                            </div>
+                        </div>
+                        <div style="font-weight: 700; color: var(--primary-color); font-size: 0.85rem;">
+                            $${invoice.total.toFixed(2)}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            historyContainer.innerHTML = historyHTML;
+        }
+        
+        // =================== FUNCIONES PARA PDF ===================
+        
+        function generatePDF() {
+            // Crear instancia de jsPDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            // Calcular totales
+            let subtotal = 0;
+            
+            currentInvoiceItems.forEach(item => {
+                subtotal += item.total;
+            });
+            
+            const discountAmount = currentDiscount.applied ? currentDiscount.amount : 0;
+            const finalTotal = subtotal - discountAmount;
+            const profit = subtotal * (systemConfig.profitPercentage / 100);
+            
+            // Datos del cliente
+            const customerName = document.getElementById('customerName').value;
+            const customerPhone = document.getElementById('customerPhone').value;
+            const invoiceNumber = document.getElementById('invoiceNumber').textContent;
+            const date = new Date().toLocaleDateString('es-ES');
+            
+            let currentY = 20;
+            
+            // Nombre de la empresa
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text(companyInfo.name, 105, currentY, { align: 'center' });
+            currentY += 8;
+            
+            // Información de la empresa
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text(companyInfo.address, 105, currentY, { align: 'center' });
+            currentY += 4;
+            doc.text(`Tel: ${companyInfo.phone}`, 105, currentY, { align: 'center' });
+            currentY += 10;
+            
+            // Línea separadora
+            doc.setLineWidth(0.5);
+            doc.line(15, currentY, 195, currentY);
+            currentY += 10;
+            
+            // Título FACTURA
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('FACTURA', 105, currentY, { align: 'center' });
+            currentY += 8;
+            
+            doc.setFontSize(12);
+            doc.text(invoiceNumber, 105, currentY, { align: 'center' });
+            currentY += 10;
+            
+            // Información del cliente
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('DATOS DEL CLIENTE', 15, currentY);
+            currentY += 6;
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.text(`Nombre: ${customerName}`, 15, currentY);
+            currentY += 5;
+            
+            if (customerPhone) {
+                doc.text(`Teléfono: ${customerPhone}`, 15, currentY);
+                currentY += 5;
+            }
+            
+            doc.text(`Fecha: ${date}`, 15, currentY);
+            currentY += 10;
+            
+            // Encabezado de la tabla
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text('#', 15, currentY);
+            doc.text('Descripción', 25, currentY);
+            doc.text('Medidas', 90, currentY);
+            doc.text('Producto', 140, currentY);
+            doc.text('Total', 180, currentY);
+            
+            currentY += 6;
+            doc.setLineWidth(0.3);
+            doc.line(15, currentY, 195, currentY);
+            currentY += 8;
+            
+            // Productos
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            
+            currentInvoiceItems.forEach((item, index) => {
+                // Número
+                doc.text((index + 1).toString(), 15, currentY);
+                
+                // Descripción
+                let description = item.description;
+                if (description.length > 30) {
+                    description = description.substring(0, 27) + '...';
+                }
+                doc.text(description, 25, currentY);
+                
+                // Medidas
+                let measures = item.calculationType === 'unit' ? 
+                    `${item.quantity} und` : 
+                    `${Math.round(item.width)}"×${Math.round(item.height)}"`;
+                doc.text(measures, 90, currentY);
+                
+                // Producto
+                let productName = item.productName;
+                if (productName.length > 15) {
+                    productName = productName.substring(0, 12) + '...';
+                }
+                doc.text(productName, 140, currentY);
+                
+                // Total
+                doc.text(`$${item.total.toFixed(2)}`, 195, currentY, { align: 'right' });
+                
+                currentY += 8;
+                
+                // Nueva página si es necesario
+                if (currentY > 260) {
+                    doc.addPage();
+                    currentY = 20;
+                }
+            });
+            
+            currentY += 10;
+            
+            // Totales
+            const totalsStartX = 115;
+            
+            // Subtotal
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.text('Subtotal:', totalsStartX, currentY);
+            doc.text(`$${subtotal.toFixed(2)}`, 195, currentY, { align: 'right' });
+            currentY += 6;
+            
+            // Descuento
+            if (currentDiscount.applied && discountAmount > 0) {
+                doc.text('Descuento:', totalsStartX, currentY);
+                doc.text(`-$${discountAmount.toFixed(2)}`, 195, currentY, { align: 'right' });
+                currentY += 6;
+            }
+            
+            currentY += 4;
+            
+            // Línea separadora
+            doc.setLineWidth(0.5);
+            doc.line(totalsStartX - 10, currentY, 195, currentY);
+            currentY += 8;
+            
+            // Total Final
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.text('TOTAL:', totalsStartX, currentY);
+            doc.text(`$${finalTotal.toFixed(2)}`, 195, currentY, { align: 'right' });
+            
+            currentY += 15;
+            
+            // Pie de página
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100);
+            
+            // Mensaje
+            doc.text(companyInfo.message, 105, currentY, { align: 'center' });
+            currentY += 5;
+            
+            // Información de contacto
+            doc.text(`${companyInfo.name} - ${companyInfo.address} - Tel: ${companyInfo.phone}`, 
+                     105, currentY, { align: 'center' });
+            
+            return doc;
+        }
+        
+        function downloadPDF() {
+            if (currentInvoiceItems.length === 0) {
+                showNotification('No hay items en la factura', 'error');
+                return;
+            }
+            
+            const customerName = document.getElementById('customerName').value.trim();
+            if (!customerName) {
+                showNotification('Ingresa el nombre del cliente', 'error');
+                return;
+            }
+            
+            const doc = generatePDF();
+            const invoiceNumber = document.getElementById('invoiceNumber').textContent;
+            const fileName = `Factura-${invoiceNumber}.pdf`;
+            
+            doc.save(fileName);
+            showNotification('PDF descargado correctamente', 'success');
+        }
+        
+        function sendWhatsAppInvoice() {
+            if (currentInvoiceItems.length === 0) {
+                showNotification('No hay items en la factura', 'error');
+                return;
+            }
+            
+            const customerName = document.getElementById('customerName').value.trim();
+            const customerPhone = document.getElementById('customerPhone').value.trim();
+            
+            if (!customerName) {
+                showNotification('Ingresa el nombre del cliente', 'error');
+                return;
+            }
+            
+            if (!customerPhone || customerPhone.length !== 10) {
+                showNotification('Ingresa un número de teléfono válido (10 dígitos)', 'error');
+                return;
+            }
+            
+            // Generar y descargar PDF primero
+            const doc = generatePDF();
+            const invoiceNumber = document.getElementById('invoiceNumber').textContent;
+            const fileName = `Factura-${invoiceNumber}.pdf`;
+            doc.save(fileName);
+            
+            // Guardar la factura en historial
+            saveInvoiceToHistory();
+            
+            // Mensaje para WhatsApp
+            let message = `*${companyInfo.name}*\n`;
+            message += `*Factura:* ${invoiceNumber}\n`;
+            message += `*Cliente:* ${customerName}\n`;
+            message += `*Fecha:* ${new Date().toLocaleDateString('es-ES')}\n\n`;
+            message += `Adjunto encontrará la factura detallada en formato PDF.\n\n`;
+            message += `${companyInfo.message}\n`;
+            
+            // Formatear número para WhatsApp
+            const cleanPhone = customerPhone.replace(/[-\s]/g, '');
+            const whatsappNumber = cleanPhone.startsWith('1') ? cleanPhone : '1' + cleanPhone;
+            
+            // URL de WhatsApp
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+            
+            // Abrir WhatsApp en nueva pestaña
+            window.open(whatsappUrl, '_blank');
+            
+            showNotification('Factura enviada a WhatsApp', 'success');
+        }
+        
+        // =================== FUNCIONES DE CLIENTES ===================
+        
+        function loadClientsList() {
+            const clientsList = document.getElementById('clientsList');
+            
+            if (clients.length === 0) {
+                clientsList.innerHTML = `
+                    <div style="text-align: center; padding: 1.5rem; color: var(--gray-500);">
+                        <i class="fas fa-users" style="font-size: 1.5rem; margin-bottom: 0.75rem; opacity: 0.5;"></i>
+                        <p style="font-size: 0.85rem;">No hay clientes registrados</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let clientsHTML = '';
+            clients.forEach(client => {
+                clientsHTML += `
+                    <div style="background: white; border-radius: var(--radius-md); padding: 0.75rem; margin-bottom: 0.5rem; box-shadow: var(--shadow-sm); border-left: 4px solid var(--primary-color);">
+                        <div style="font-weight: 600; color: var(--gray-900); font-size: 0.85rem;">${client.name}</div>
+                        <div style="font-size: 0.75rem; color: var(--gray-600); margin-top: 0.125rem;">Tel: ${client.phone}</div>
+                    </div>
+                `;
+            });
+            
+            clientsList.innerHTML = clientsHTML;
+        }
+        
+        function openClientModal() {
+            const modal = document.getElementById('clientModal');
+            modal.style.display = 'flex';
+        }
+        
+        function saveClient() {
+            const name = document.getElementById('clientName').value.trim();
+            const phone = document.getElementById('clientPhone').value.trim();
+            
+            if (!name) {
+                showNotification('Ingresa el nombre del cliente', 'error');
+                return;
+            }
+            
+            if (!phone || phone.length !== 10) {
+                showNotification('Ingresa un número de teléfono válido (10 dígitos)', 'error');
+                return;
+            }
+            
+            const newClient = {
+                id: Date.now(),
+                name: name,
+                phone: phone,
+                createdAt: new Date().toISOString()
+            };
+            clients.unshift(newClient);
+            
+            saveToLocalStorage();
+            loadClientsList();
+            document.getElementById('clientModal').style.display = 'none';
+            
+            // Limpiar formulario
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientPhone').value = '';
+            
+            showNotification('Cliente creado', 'success');
+        }
+        
+        // =================== FUNCIONES DE INVENTARIO ===================
+        
+        function loadInventory() {
+            const inventoryItems = document.getElementById('inventoryItems');
+            
+            if (products.length === 0) {
+                inventoryItems.innerHTML = `
+                    <div style="text-align: center; padding: 1.5rem; color: var(--gray-500);">
+                        <i class="fas fa-box" style="font-size: 1.5rem; margin-bottom: 0.75rem; opacity: 0.5;"></i>
+                        <p style="font-size: 0.85rem;">No hay productos en el inventario</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let inventoryHTML = '';
+            products.forEach(product => {
+                const category = categories.find(c => c.id === product.categoryId);
+                
+                inventoryHTML += `
+                    <div style="background: white; border-radius: var(--radius-md); padding: 0.75rem; margin-bottom: 0.5rem; box-shadow: var(--shadow-sm);">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.85rem;">${product.name}</div>
+                                <div style="font-size: 0.75rem; color: var(--gray-600);">${product.description}</div>
+                                <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
+                                    <span style="font-size: 0.75rem; color: var(--gray-700);">
+                                        <strong>Categoría:</strong> ${category ? category.name : 'Sin categoría'}
+                                    </span>
+                                    <span style="font-size: 0.75rem; color: var(--gray-700);">
+                                        <strong>Precio:</strong> $${product.price.toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            inventoryItems.innerHTML = inventoryHTML;
+        }
+        
+        // =================== EVENT LISTENERS ===================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Navegación
+            document.querySelectorAll('.nav-item').forEach(item => {
+                if (item.id !== 'logoutBtn') {
+                    item.addEventListener('click', function() {
+                        const sectionId = this.id.replace('Menu', 'Section');
+                        
+                        document.querySelectorAll('.nav-item').forEach(nav => {
+                            nav.classList.remove('active');
+                        });
+                        this.classList.add('active');
+                        
+                        document.querySelectorAll('.content-section').forEach(section => {
+                            section.style.display = 'none';
+                        });
+                        document.getElementById(sectionId).style.display = 'block';
+                        
+                        // Actualizar título
+                        const titles = {
+                            'invoiceMenu': 'Facturación',
+                            'clientsMenu': 'Clientes',
+                            'reportsMenu': 'Reportes',
+                            'inventoryMenu': 'Inventario'
+                        };
+                        
+                        document.getElementById('pageTitle').textContent = titles[this.id];
+                    });
+                }
+            });
+            
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                    localStorage.clear();
+                    window.location.reload();
+                }
+            });
+            
+            // Eventos de facturación
+            document.getElementById('addItemBtn').addEventListener('click', addItemToInvoice);
+            document.getElementById('resetFormBtn').addEventListener('click', resetItemForm);
+            
+            document.getElementById('applyDiscountBtn').addEventListener('click', function() {
+                const discountAmount = parseFloat(document.getElementById('discountAmount').value);
+                
+                if (!discountAmount || discountAmount <= 0) {
+                    showNotification('Ingresa un descuento válido', 'error');
+                    return;
+                }
+                
+                let subtotal = 0;
+                currentInvoiceItems.forEach(item => {
+                    subtotal += item.total;
+                });
+                
+                if (discountAmount > subtotal) {
+                    showNotification(`El descuento no puede ser mayor al subtotal ($${subtotal.toFixed(2)})`, 'error');
+                    return;
+                }
+                
+                currentDiscount = {
+                    amount: discountAmount,
+                    reason: "",
+                    applied: true
+                };
+                
+                showNotification(`Descuento aplicado: $${discountAmount.toFixed(2)}`);
+                if (currentInvoiceItems.length > 0) updateInvoiceDisplay();
+            });
+            
+            // Botones de PDF principales
+            document.getElementById('downloadPDFMainBtn').addEventListener('click', downloadPDF);
+            document.getElementById('downloadPDFBtn').addEventListener('click', downloadPDF);
+            
+            // Botón de WhatsApp
+            document.getElementById('sendWhatsAppBtn').addEventListener('click', sendWhatsAppInvoice);
+            document.getElementById('sendWhatsAppFromInvoiceBtn').addEventListener('click', sendWhatsAppInvoice);
+            
+            // Botón de ticket térmico (placeholder)
+            document.getElementById('printThermalBtn').addEventListener('click', function() {
+                showNotification('Funcionalidad de ticket térmico en desarrollo', 'info');
+            });
+            
+            document.getElementById('quickPrintThermalBtn').addEventListener('click', function() {
+                showNotification('Funcionalidad de ticket térmico en desarrollo', 'info');
+            });
+            
+            // Limpiar factura
+            document.getElementById('clearInvoiceBtn').addEventListener('click', clearInvoice);
+            document.getElementById('clearBtn').addEventListener('click', clearInvoice);
+            
+            // Eventos de clientes
+            document.getElementById('addClientBtn').addEventListener('click', openClientModal);
+            document.getElementById('saveClientBtn').addEventListener('click', saveClient);
+            
+            // Cerrar modales
+            document.getElementById('closeClientModal').addEventListener('click', function() {
+                document.getElementById('clientModal').style.display = 'none';
+            });
+            
+            document.getElementById('cancelClientBtn').addEventListener('click', function() {
+                document.getElementById('clientModal').style.display = 'none';
+            });
+            
+            // Cerrar modal al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                }
+            });
+            
+            // Inicializar UI
+            initializeUI();
+        });
+    </script>
+</body>
+</html>
